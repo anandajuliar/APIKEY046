@@ -3,107 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css"> 
 </head>
 <body class="bg-light">
 
-    <div class="container py-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="text-primary">User API Key Management</h1>
-            <button id="logoutBtn" class="btn btn-danger">Logout</button>
-        </div>
-        
-        <div id="statusMessage" class="alert alert-info">Memuat data...</div>
+    <div class="container d-flex justify-content-center align-items-center vh-100">
+        <div class="card p-4 shadow-lg text-center api-card">
+            <h2 class="text-success mb-4">Admin Login</h2>
+            <p class="text-muted">Masuk untuk mengakses Dashboard User Data.</p>
 
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nama</th>
-                    <th>Email</th>
-                    <th>API Key</th>
-                    <th>Status</th>
-                    <th>Masa Berlaku</th>
-                </tr>
-            </thead>
-            <tbody id="usersTableBody">
-                </tbody>
-        </table>
+            <div class="mb-4 text-start">
+                <input type="email" id="loginEmail" class="form-control mb-2" placeholder="Email Admin" required>
+                <input type="password" id="loginPassword" class="form-control mb-3" placeholder="Password" required>
+                <button id="loginAdminBtn" class="btn btn-success w-100 mb-3">
+                    Login
+                </button>
+            </div>
+            
+            <p id="loginMessage" class="mt-3"></p>
+            <a href="index.html" class="mt-3 text-primary">Kembali ke Generator Key</a>
+        </div>
     </div>
 
     <script>
-        const API_USERS_URL = '/admin/users';
-        const token = localStorage.getItem('adminToken');
-        const statusMessage = document.getElementById('statusMessage');
-        const usersTableBody = document.getElementById('usersTableBody');
-        
-        // Cek Autentikasi Saat Memuat Halaman
-        if (!token) {
-            statusMessage.className = 'alert alert-danger';
-            statusMessage.textContent = 'Akses ditolak. Silakan login terlebih dahulu.';
-            setTimeout(() => { window.location.href = 'admin_login.html'; }, 2000);
-        } else {
-            fetchUserData(token);
-        }
+        const API_LOGIN_URL = '/admin/login';
 
-        async function fetchUserData(jwtToken) {
+        document.getElementById('loginAdminBtn').addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const messageArea = document.getElementById('loginMessage');
+
+            messageArea.textContent = "Processing...";
+            messageArea.className = 'mt-3 text-info';
+
             try {
-                const response = await fetch(API_USERS_URL, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${jwtToken}`,
-                        'Content-Type': 'application/json',
-                    },
+                const response = await fetch(API_LOGIN_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    statusMessage.style.display = 'none';
-                    renderTable(data);
+                    localStorage.setItem('adminToken', data.token);
+                    messageArea.textContent = 'Login Berhasil! Mengalihkan...';
+                    messageArea.className = 'mt-3 text-success';
+                    
+                    // ARAHKAN KE DASHBOARD
+                    window.location.href = 'admin_dashboard.html'; 
                 } else {
-                    // 401 Unauthorized karena token kedaluwarsa/salah
-                    statusMessage.className = 'alert alert-warning';
-                    statusMessage.textContent = `Error ${response.status}: ${data.message || 'Token tidak valid.'}`;
-                    // Paksa logout jika token ditolak
-                    document.getElementById('logoutBtn').click(); 
+                    messageArea.textContent = `Gagal Login: ${data.message || 'Kredensial tidak valid.'}`;
+                    messageArea.className = 'mt-3 text-danger';
                 }
             } catch (error) {
-                statusMessage.className = 'alert alert-danger';
-                statusMessage.textContent = "Gagal terhubung ke server API.";
+                messageArea.textContent = "Error: Gagal terhubung ke server API.";
+                messageArea.className = 'mt-3 text-danger';
             }
-        }
-
-        function renderTable(users) {
-            usersTableBody.innerHTML = ''; // Kosongkan tabel
-            if (users.length === 0) {
-                usersTableBody.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada user terdaftar.</td></tr>';
-                return;
-            }
-
-            users.forEach(user => {
-                const row = usersTableBody.insertRow();
-                const expiryDate = new Date(user.OUT_OF_DATE).toLocaleDateString();
-                let statusClass = user.STATUS === 'Active' ? 'badge bg-success' : 'badge bg-danger';
-
-                row.innerHTML = `
-                    <td>${user.ID}</td>
-                    <td>${user.FIRST_NAME} ${user.LAST_NAME}</td>
-                    <td>${user.EMAIL}</td>
-                    <td style="font-size: 0.8rem; word-break: break-all;">${user.KEY_VALUE}</td>
-                    <td><span class="${statusClass}">${user.STATUS}</span></td>
-                    <td>${expiryDate}</td>
-                `;
-            });
-        }
-        
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('adminToken');
-            window.location.href = 'index.html';
         });
     </script>
-
 </body>
 </html>

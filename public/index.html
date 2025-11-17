@@ -33,6 +33,8 @@
                 Copy to Clipboard
             </button>
             
+            <p id="messageArea" class="mt-3"></p>
+            
             <a href="admin_register.html" class="mt-4 btn btn-link text-primary">
                 <small>&#x1F468;&#x200D;&#x1F4BB; Registrasi Admin</small>
             </a>
@@ -43,7 +45,7 @@
     </div>
 
     <script>
-        const API_REGISTER_URL = '/user/register'; // Endpoint yang sudah Anda buat
+        const API_REGISTER_URL = '/user/register';
 
         document.getElementById('generateKeyBtn').addEventListener('click', async () => {
             const firstName = document.getElementById('firstName').value;
@@ -51,7 +53,8 @@
             const email = document.getElementById('email').value;
             const outputField = document.getElementById('apiKeyOutput');
             const copyBtn = document.getElementById('copyKeyBtn');
-            const messageArea = document.getElementById('messageArea');
+            // Pastikan messageArea diakses di sini
+            const messageArea = document.getElementById('messageArea'); 
 
             // Reset UI
             outputField.value = "Generating...";
@@ -73,19 +76,18 @@
                     outputField.value = data.apiKey;
                     copyBtn.disabled = false;
                     messageArea.textContent = `Registrasi berhasil! Key berlaku hingga: ${new Date(data.expires).toLocaleDateString()}`;
-                    messageArea.classList.remove('text-danger');
+                    messageArea.classList.remove('text-danger', 'text-info'); // Hapus class lama
                     messageArea.classList.add('text-success');
                 } else {
-                    // Menangani error (misal: 409 Email sudah terdaftar, 400 field kosong)
                     outputField.value = "Error";
                     messageArea.textContent = `Error: ${data.error || data.message || 'Gagal registrasi'}`;
-                    messageArea.classList.remove('text-success');
+                    messageArea.classList.remove('text-success', 'text-info');
                     messageArea.classList.add('text-danger');
                 }
             } catch (error) {
                 outputField.value = "Error Jaringan";
                 messageArea.textContent = "Error: Gagal terhubung ke server API.";
-                messageArea.classList.remove('text-success');
+                messageArea.classList.remove('text-success', 'text-info');
                 messageArea.classList.add('text-danger');
             }
         });
@@ -93,12 +95,12 @@
         document.getElementById('copyKeyBtn').addEventListener('click', () => {
             const outputField = document.getElementById('apiKeyOutput');
             outputField.select();
-            outputField.setSelectionRange(0, 99999); // Untuk perangkat mobile
+            outputField.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(outputField.value);
             
             const messageArea = document.getElementById('messageArea');
             messageArea.textContent = "API Key berhasil disalin!";
-            messageArea.classList.remove('text-danger');
+            messageArea.classList.remove('text-danger', 'text-success');
             messageArea.classList.add('text-info');
         });
     </script>

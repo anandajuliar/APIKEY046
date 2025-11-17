@@ -51,19 +51,23 @@ const authenticateAdmin = (req, res, next) => {
 //           ADMIN ROUTES (CRUD)
 // ===============================================
 
-// 1. Registrasi Admin Baru
+// 1. Registrasi Admin Baru (Disederhanakan)
 app.post('/admin/register', async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) {
             return res.status(400).json({ error: 'Email dan password harus diisi.' });
         }
+        
         const hashedPassword = await bcrypt.hash(password, 10);
         
-        const sql = "INSERT INTO ADMINS (EMAIL, PASSWORD) VALUES (?, ?)";
+        // Hapus: Tidak perlu memasukkan ADMIN_TOKEN lagi
+        const sql = "INSERT INTO ADMINS (EMAIL, PASSWORD) VALUES (?, ?)"; 
         await pool.query(sql, [email, hashedPassword]);
 
-        res.status(201).json({ message: 'Admin berhasil didaftarkan.' });
+        res.status(201).json({ 
+            message: 'Admin berhasil didaftarkan. Silakan Login.'
+        });
 
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
@@ -74,35 +78,44 @@ app.post('/admin/register', async (req, res) => {
     }
 });
 
-// 2. Login Admin & Mendapatkan Token JWT
+// index.js
+
+// 2. Login Admin (Email & Password)
 app.post('/admin/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        const sql = "SELECT ID, PASSWORD FROM ADMINS WHERE EMAIL = ?";
+
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email dan password wajib disertakan.' });
+        }
+        
+        const sql = "SELECT ID, PASSWORD, EMAIL FROM ADMINS WHERE EMAIL = ?";
         const [rows] = await pool.query(sql, [email]);
         
         if (rows.length === 0) {
-            return res.status(401).json({ message: 'Kredensial tidak valid.' });
+            return res.status(401).json({ message: 'Email atau password tidak valid.' });
         }
 
         const admin = rows[0];
         const isMatch = await bcrypt.compare(password, admin.PASSWORD);
 
         if (!isMatch) {
-            return res.status(401).json({ message: 'Kredensial tidak valid.' });
+            return res.status(401).json({ message: 'Email atau password tidak valid.' });
         }
 
-        // Generate JWT Token
-        const token = jwt.sign({ id: admin.ID, email: email }, JWT_SECRET, { expiresIn: '1h' });
+        // KREDENSIAL VALID. Buat JWT Sesi untuk akses API selama 1 jam.
+        const sessionToken = jwt.sign({ id: admin.ID, email: admin.EMAIL, type: 'ADMIN_SESSION' }, JWT_SECRET, { expiresIn: '1h' });
         
-        res.json({ token, message: 'Login berhasil' });
+        res.json({ 
+            token: sessionToken, 
+            message: 'Login berhasil, silakan gunakan Token Sesi ini untuk akses dashboard.' 
+        });
 
     } catch (error) {
         console.error("Error login admin:", error);
         res.status(500).json({ error: 'Gagal login' });
     }
 });
-
 
 // 3. Admin Melihat Semua User dan Key (Protected Route)
 app.get('/admin/users', authenticateAdmin, async (req, res) => {
