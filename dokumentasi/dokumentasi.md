@@ -1,5 +1,5 @@
 Tampilan Hasil Akhir
-## 1. Admin Register (Thunder Client)
+## 1. Admin Register dan Login (Thunder Client)
 ![Tampilkan](adminRegister.png)
 ![Tampilkan](adminLogin.png)
 
