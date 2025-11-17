@@ -1,0 +1,25 @@
+.api-card {
+    max-width: 450px;
+    width: 90%;
+    margin-top: 50px;
+    padding: 30px !important;
+    border: none;
+    background-color: #ffffff;
+    border-radius: 15px;
+}
+
+#apiKeyOutput {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #4a4a4a;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    height: auto;
+    padding: 10px;
+    word-break: break-all; /* Agar key panjang tidak melebihi batas */
+}
+
+.text-primary {
+    color: #6f42c1 !important; /* Warna ungu seperti di gambar */
+    font-weight: 700;
+}
