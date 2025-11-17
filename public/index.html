@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Key Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css"> 
+</head>
+<body class="bg-light">
+
+    <div class="container d-flex justify-content-center align-items-center vh-100">
+        <div class="card p-4 shadow-lg text-center api-card">
+            <h2 class="text-primary mb-4">API Key Generator</h2>
+            <p class="text-muted">Generate your secure API key</p>
+
+            <div class="mb-4 text-start">
+                <h5 class="mb-3">Registrasi Pengguna Baru</h5>
+                <input type="text" id="firstName" class="form-control mb-2" placeholder="First Name">
+                <input type="text" id="lastName" class="form-control mb-2" placeholder="Last Name">
+                <input type="email" id="email" class="form-control mb-3" placeholder="Email">
+                <button id="generateKeyBtn" class="btn btn-primary w-100 mb-3">
+                    Register & Generate Key
+                </button>
+            </div>
+            
+            <div class="input-group mb-3">
+                <input type="text" class="form-control text-center" id="apiKeyOutput" 
+                       value="Key akan muncul di sini..." readonly>
+            </div>
+            
+            <button id="copyKeyBtn" class="btn btn-success" disabled>
+                Copy to Clipboard
+            </button>
+            <p id="messageArea" class="mt-3 text-danger"></p>
+        </div>
+    </div>
+
+    <script>
+        const API_REGISTER_URL = '/user/register'; // Endpoint yang sudah Anda buat
+
+        document.getElementById('generateKeyBtn').addEventListener('click', async () => {
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const outputField = document.getElementById('apiKeyOutput');
+            const copyBtn = document.getElementById('copyKeyBtn');
+            const messageArea = document.getElementById('messageArea');
+
+            // Reset UI
+            outputField.value = "Generating...";
+            copyBtn.disabled = true;
+            messageArea.textContent = "";
+
+            try {
+                const response = await fetch(API_REGISTER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ firstName, lastName, email }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    outputField.value = data.apiKey;
+                    copyBtn.disabled = false;
+                    messageArea.textContent = `Registrasi berhasil! Key berlaku hingga: ${new Date(data.expires).toLocaleDateString()}`;
+                    messageArea.classList.remove('text-danger');
+                    messageArea.classList.add('text-success');
+                } else {
+                    // Menangani error (misal: 409 Email sudah terdaftar, 400 field kosong)
+                    outputField.value = "Error";
+                    messageArea.textContent = `Error: ${data.error || data.message || 'Gagal registrasi'}`;
+                    messageArea.classList.remove('text-success');
+                    messageArea.classList.add('text-danger');
+                }
+            } catch (error) {
+                outputField.value = "Error Jaringan";
+                messageArea.textContent = "Error: Gagal terhubung ke server API.";
+                messageArea.classList.remove('text-success');
+                messageArea.classList.add('text-danger');
+            }
+        });
+
+        document.getElementById('copyKeyBtn').addEventListener('click', () => {
+            const outputField = document.getElementById('apiKeyOutput');
+            outputField.select();
+            outputField.setSelectionRange(0, 99999); // Untuk perangkat mobile
+            navigator.clipboard.writeText(outputField.value);
+            
+            const messageArea = document.getElementById('messageArea');
+            messageArea.textContent = "API Key berhasil disalin!";
+            messageArea.classList.remove('text-danger');
+            messageArea.classList.add('text-info');
+        });
+    </script>
+</body>
+</html>
